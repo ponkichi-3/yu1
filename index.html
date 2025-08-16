@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<title>中学受験 1問1答（記述＋ヒント＋復習）v3</title>
+<title>中学受験 1問1答（記述＋ヒント＋復習）v7</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Hiragino Sans',sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;overflow-x:hidden}
-.container{background:#fff;border-radius:20px;padding:30px;box-shadow:0 20px 40px rgba(0,0,0,.1);max-width:820px;width:100%}
+.container{background:#fff;border-radius:20px;padding:30px;box-shadow:0 20px 40px rgba(0,0,0,.1);max-width:860px;width:100%}
 h1,h2{text-align:center;color:#333;margin-bottom:18px}
 h1{font-size:26px}
 .sub{font-size:13px;text-align:center;color:#718096;margin-bottom:18px}
@@ -39,7 +39,8 @@ textarea{min-height:100px;resize:vertical}
 .question-number{font-size:14px;color:#718096;font-weight:600}
 .point-badge{background:#667eea;color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
 .question-title{font-size:13px;color:#4a5568;margin-bottom:6px;font-weight:600}
-.question-text{font-size:20px;font-weight:700;color:#2d3748;line-height:1.5}
+.question-text{font-size:20px;font-weight:700;color:#2d3748;line-height:1.6}
+.question-text img{max-width:100%;height:auto;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin:8px 0}
 .user-answer-box{margin-top:12px}
 .model-answer{margin-top:10px;padding:12px;background:#e6fffa;border:2px solid #38b2ac;border-radius:8px;display:none}
 .model-answer-label{font-size:12px;color:#2c7a7b;font-weight:700;margin-bottom:4px}
@@ -56,10 +57,10 @@ textarea{min-height:100px;resize:vertical}
 .hint-label{font-size:12px;color:#c05621;font-weight:700;margin-bottom:4px}
 .hint-text{color:#7b341e;font-size:15px;line-height:1.5;white-space:pre-wrap}
 .hint-btn{display:inline-block;padding:8px 12px;border:2px solid #ed8936;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;font-weight:700;color:#c05621;margin-top:10px}
+.score-display{font-size:56px;font-weight:800;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:10px 0;text-align:center}
 .result-details{background:#f7fafc;border-radius:12px;padding:16px;margin:14px 0}
 .result-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e2e8f0}
 .result-item:last-child{border-bottom:none}
-.score-display{font-size:56px;font-weight:800;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:10px 0;text-align:center}
 .small{font-size:12px;color:#718096;text-align:center;margin-top:6px}
 #err{display:none;margin-bottom:10px;padding:10px;border-radius:8px;background:#FED7D7;color:#822727;font-weight:700}
 @media (max-width:480px){.rate-grid{grid-template-columns:1fr} .question-text{font-size:18px} .score-display{font-size:48px}}
@@ -70,7 +71,7 @@ textarea{min-height:100px;resize:vertical}
   <div id="err"></div>
   <div id="homeScreen">
     <h1>中学受験 1問1答（記述＋復習）</h1>
-    <div class="sub">CSVはGitHubに配置（自動読込）。見つからない場合は東北・北海道のサンプル20問を使用。</div>
+    <div class="sub">CSVはGitHubに配置（自動読込）。見つからない場合は「社会20＋理科（天文20＋水溶液16）」計56問のサンプルを使用。</div>
     <button class="button button-purple" onclick="startTestSetup('test')">テストモード</button>
     <button class="button button-orange" onclick="startTestSetup('practice')">練習モード</button>
     <button class="button button-green" onclick="startReviewMode()">復習モード</button>
@@ -195,20 +196,17 @@ textarea{min-height:100px;resize:vertical}
 </div>
 
 <script>
-// ====== 基本設定 ======
 const DEFAULT_CSVS = ['juken_questions.csv','questions.csv'];
 document.getElementById('csvNameNote').textContent = DEFAULT_CSVS[0];
 
-// エラーを画面に表示
 window.addEventListener('error', (e)=>{
   const box=document.getElementById('err');
   box.textContent = 'スクリプトエラー: ' + (e.message||'') + '（詳細はブラウザのコンソールを参照）';
   box.style.display='block';
 });
 
-// ====== 状態 ======
-let questionData = [];           // CSV/サンプル全件
-let currentQuestions = [];       // 今回の出題リスト
+let questionData = [];
+let currentQuestions = [];
 let currentIndex = 0;
 let startTime = null;
 let timerInterval = null;
@@ -216,29 +214,20 @@ let timeLimit = 10;
 let mode = 'test';
 let reviewPool = [];
 let reviewAddedNow = 0;
-const REVIEW_KEY='jukenReviewPoolV3';
+const REVIEW_KEY='jukenReviewPoolV7';
 
-// ====== 画面制御 ======
 function show(id){
   ['homeScreen','settingsScreen','quizScreen','resultScreen'].forEach(s=>{
     const el=document.getElementById(s); if(el) el.classList.add('hidden');
   });
   document.getElementById(id).classList.remove('hidden');
 }
-function backToHome(){
-  resetState();
-  show('homeScreen');
-}
-function startTestSetup(m){
-  mode=m;
-  show('settingsScreen');
-  updateModeUI();
-}
+function backToHome(){ resetState(); show('homeScreen'); }
+function startTestSetup(m){ mode=m; show('settingsScreen'); updateModeUI(); }
 
-// ====== 初期化 ======
 document.addEventListener('DOMContentLoaded', async ()=>{
   loadReviewPool();
-  buildSubjectUI(); // 4科目チェックボックス
+  buildSubjectUI();
   await autoLoadCSVOrSample();
 });
 
@@ -263,9 +252,7 @@ function resetState(){
   document.getElementById('hintButton').style.display='none';
 }
 
-// ====== CSV 読み込み or サンプル ======
 async function autoLoadCSVOrSample(){
-  // まずCSVを試す
   for (const name of DEFAULT_CSVS){
     try{
       const res = await fetch(name, {cache:'no-store'});
@@ -273,33 +260,27 @@ async function autoLoadCSVOrSample(){
       const text = await res.text();
       const rows = parseCSV(text);
       questionData = normalizeRows(rows);
-      console.log(`[CSV] Loaded ${questionData.length} rows from ${name}`);
       document.getElementById('csvNameNote').textContent = name + '（読込）';
       deselectAllSubjects();
       return;
-    }catch(e){
-      console.warn(`[CSV] Failed to load ${name}`, e);
-    }
+    }catch(e){ /* CSVなし → 続行 */ }
   }
-  // 見つからなければサンプルで初期化（社会 20問）
-  questionData = SAMPLE_20.map(x=>({...x}));
-  document.getElementById('csvNameNote').textContent = 'サンプル20問（社会）を使用中';
+  questionData = SAMPLE_56.map(x=>({...x}));
+  document.getElementById('csvNameNote').textContent = 'サンプル56問（社会20＋理科20＋理科16）を使用中';
   deselectAllSubjects();
 }
 
-// シンプルCSVパーサ（ダブルクオート対応）
 function parseCSV(text){
   const rows=[]; let row=[]; let cur=''; let inQ=false;
   for(let i=0;i<text.length;i++){
     const c=text[i], n=text[i+1];
     if(inQ){
-      if(c==='\"'){
-        if(n==='\"'){ cur+='\"'; i++; } else { inQ=false; }
-      }else cur+=c;
+      if(c==='\"'){ if(n==='\"'){ cur+='\"'; i++; } else { inQ=false; } }
+      else cur+=c;
     }else{
       if(c==='\"'){ inQ=true; }
       else if(c===','){ row.push(cur); cur=''; }
-      else if(c==='\r'){ /* skip */ }
+      else if(c==='\r'){}
       else if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
       else cur+=c;
     }
@@ -308,39 +289,31 @@ function parseCSV(text){
   return rows;
 }
 
-function normalizeHeader(h){
-  return (h||'').toString().trim().toLowerCase().replace(/[\s_]+/g,'');
-}
+function normalizeHeader(h){ return (h||'').toString().trim().toLowerCase().replace(/[\s_]+/g,''); }
 
-// 期待ヘッダ: id,question,answer,hint,subject,point,title
 function normalizeRows(rows){
   if(!rows || !rows.length) return [];
   const header = rows[0].map(normalizeHeader);
   const idx = (name)=> header.indexOf(normalizeHeader(name));
-
   const idI=idx('id'), qI=idx('question'), aI=idx('answer'), hI=idx('hint');
   const sI=idx('subject'), pI=idx('point'), tI=idx('title');
-
   const out=[];
   for(let i=1;i<rows.length;i++){
     const r=rows[i]; if(!r || r.length===0) continue;
     const get = (I)=> (I>=0 && I<r.length) ? (r[I]||'') : '';
-    const subject = (get(sI)||'').trim() || 'その他';
-    const title = (get(tI)||'').trim() || '未分類';
     out.push({
       id: (get(idI)||'').toString().trim(),
       question: (get(qI)||'').toString().trim(),
       answer: (get(aI)||'').toString().trim(),
       hint: (get(hI)||'').toString().trim(),
-      subject,
+      subject: (get(sI)||'').toString().trim() || 'その他',
       point: (get(pI)||'').toString().trim(),
-      title
+      title: (get(tI)||'').toString().trim() || '未分類'
     });
   }
   return out.filter(q=>q.question && q.answer);
 }
 
-// ====== 科目UI ======
 const SUBJECTS = ['算数','国語','理科','社会'];
 function buildSubjectUI(){
   const box=document.getElementById('subjectGroup'); box.innerHTML='';
@@ -354,38 +327,25 @@ function buildSubjectUI(){
 function selectAllSubjects(){ document.querySelectorAll('#subjectGroup input[type=checkbox]').forEach(cb=>cb.checked=true); }
 function deselectAllSubjects(){ document.querySelectorAll('#subjectGroup input[type=checkbox]').forEach(cb=>cb.checked=false); }
 
-// ====== 復習リスト ======
 function loadReviewPool(){ try{ reviewPool = JSON.parse(localStorage.getItem(REVIEW_KEY)||'[]'); if(!Array.isArray(reviewPool)) reviewPool=[]; } catch(_){ reviewPool=[]; } }
 function saveReviewPool(){ localStorage.setItem(REVIEW_KEY, JSON.stringify(reviewPool)); }
 function addToReview(q){
   if(!q || !q.id) return;
   if(!reviewPool.some(x=>String(x.id)===String(q.id))){
-    reviewPool.push(q);
-    saveReviewPool();
-    reviewAddedNow++;
+    reviewPool.push(q); saveReviewPool(); reviewAddedNow++;
   }
 }
 
-// ====== 出題開始 ======
 function selectMode(m){ mode=m; updateModeUI(); }
 function startQuiz(){
-  // 選択された科目
   const selected = [...document.querySelectorAll('#subjectGroup input[type=checkbox]:checked')].map(cb=>cb.value);
-  if(selected.length===0){
-    alert('科目を1つ以上選択してください'); return;
-  }
+  if(selected.length===0){ alert('科目を1つ以上選択してください'); return; }
   let filtered = questionData.filter(q=> selected.includes(q.subject) );
-  if(!filtered.length){
-    alert('選択した科目に該当する問題がありません。CSVの subject をご確認ください。');
-    return;
-  }
-
+  if(!filtered.length){ alert('選択した科目に該当する問題がありません。CSVの subject をご確認ください。'); return; }
   const order=document.getElementById('questionOrder').value;
   if(order==='shuffle') filtered = shuffle(filtered);
-
   const count=document.getElementById('questionCount').value;
   if(count!=='all') filtered = filtered.slice(0, parseInt(count,10));
-
   currentQuestions = filtered.map(q=>({...q}));
   currentIndex=0; reviewAddedNow=0;
 
@@ -403,22 +363,18 @@ function startQuiz(){
       }else{ document.getElementById('timer').textContent=''; }
     };
     update(); timerInterval=setInterval(update,1000);
-  }else{
-    document.getElementById('timer').textContent='';
-  }
+  }else{ document.getElementById('timer').textContent=''; }
 
-  show('quizScreen');
-  renderQuestion();
+  show('quizScreen'); renderQuestion();
 }
 
-// ====== 出題表示 ======
 function renderQuestion(){
   if(currentIndex>=currentQuestions.length){ finishQuiz(); return; }
   const q=currentQuestions[currentIndex];
   document.getElementById('questionNumber').textContent=`問${currentIndex+1} / ${currentQuestions.length}`;
   document.getElementById('pointBadge').textContent=q.point||q.subject||'';
   document.getElementById('questionTitle').textContent=`${q.subject||''} / ${q.title||''}`;
-  document.getElementById('questionText').textContent=q.question||'';
+  document.getElementById('questionText').innerHTML = q.question||''; // HTML可（画像埋め込み）
   document.getElementById('modelAnswerText').textContent=q.answer||'';
   const hintHas = !!(q.hint && q.hint.trim().length);
   document.getElementById('hintText').textContent = q.hint||'';
@@ -426,12 +382,9 @@ function renderQuestion(){
   document.getElementById('hintBox').style.display='none';
 
   document.getElementById('userAnswer').value='';
-
   document.getElementById('modelAnswer').style.display='none';
   document.getElementById('rateArea').classList.add('hidden');
-  ['btnPerfect','btnSome','btnNone'].forEach(id=>{
-    const b=document.getElementById(id); if(b){ b.classList.remove('selected'); b.disabled=false; }
-  });
+  ['btnPerfect','btnSome','btnNone'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.classList.remove('selected'); b.disabled=false; } });
   const fb=document.getElementById('rateFeedback'); fb.style.display='none'; fb.textContent='保存しました。';
   document.getElementById('nextButton').classList.add('hidden');
   document.getElementById('finishButton').classList.add('hidden');
@@ -446,9 +399,7 @@ function confirmAnswer(){
   document.getElementById('rateArea').classList.remove('hidden');
   document.getElementById('confirmButton').disabled=true;
   document.getElementById('nextButton').classList.remove('hidden');
-  if(currentIndex === currentQuestions.length-1){
-    document.getElementById('finishButton').classList.remove('hidden');
-  }
+  if(currentIndex === currentQuestions.length-1){ document.getElementById('finishButton').classList.remove('hidden'); }
   document.getElementById('modelAnswer').scrollIntoView({behavior:'smooth', block:'center'});
 }
 
@@ -473,26 +424,21 @@ function finishQuiz(){
   if(startTime){ elapsed = Math.floor((Date.now()-startTime)/1000); }
   const mm=String(Math.floor(elapsed/60)).padStart(1,'0');
   const ss=String(elapsed%60).padStart(2,'0');
-
   document.getElementById('totalCount').textContent = total;
   document.getElementById('elapsedTime').textContent = `${mm}:${ss}`;
   document.getElementById('reviewAddedCount').textContent = reviewAddedNow;
   document.getElementById('scoreDisplay').textContent = `${total} 問 完了`;
-
   show('resultScreen');
 }
 
-// ====== ヒント ======
 function toggleHint(){
   const box=document.getElementById('hintBox');
   box.style.display = (box.style.display==='none' || box.style.display==='') ? 'block' : 'none';
 }
 
-// ====== Utils ======
 function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
-// ====== サンプル20問（社会：東北1-14／北海道15-20） ======
-const SAMPLE_20 = [
+const SAMPLE_56 = [
   {id:'001',question:'東北地方を日本海側と太平洋側に分けている山脈は何ですか。',answer:'奥羽山脈',hint:'',subject:'社会',point:'東北地方',title:'地形'},
   {id:'002',question:'世界自然遺産に登録された白神山地には、何の木の原生林が広がっていますか。',answer:'ブナ',hint:'',subject:'社会',point:'東北地方',title:'自然・世界遺産'},
   {id:'003',question:'口紅の材料に使われ、古くから最上川の流域で栽培されている工芸作物は何ですか。',answer:'紅花',hint:'',subject:'社会',point:'東北地方',title:'農業・特産'},
@@ -512,23 +458,44 @@ const SAMPLE_20 = [
   {id:'017',question:'稲作に向いていない気候の北海道で栽培するため、「ななつぼし」など寒さに強い稲がつくられました。このことを何といいますか。',answer:'品種改良',hint:'',subject:'社会',point:'北海道',title:'農業'},
   {id:'018',question:'同一の耕地で、1年ごとに数種類の作物を植えかえるやり方を何といいますか。',answer:'輪作',hint:'',subject:'社会',point:'北海道',title:'農業'},
   {id:'019',question:'日本有数の漁港である釧路港が面しているのは、オホーツク海ですか、太平洋ですか。',answer:'太平洋',hint:'',subject:'社会',point:'北海道',title:'漁業'},
-  {id:'020',question:'サロマ湖で養殖がさかんな海産物は何ですか。',answer:'ホタテガイ',hint:'',subject:'社会',point:'北海道',title:'養殖'}
+  {id:'020',question:'サロマ湖で養殖がさかんな海産物は何ですか。',answer:'ホタテガイ',hint:'',subject:'社会',point:'北海道',title:'養殖'},
+  {id:'021',question:'時計回り・反時計回りのうち、地球の自転は北極側から見て、どちらの方向に回っていますか。',answer:'反時計回り',hint:'',subject:'理科',point:'天体・地球',title:'地球の運動'},
+  {id:'022',question:'時計回り・反時計回りのうち、地球の公転は北極側から見て、どちらの方向に回っていますか。',answer:'反時計回り',hint:'',subject:'理科',point:'天体・地球',title:'地球の運動'},
+  {id:'023',question:'自分で光を出している星を何といいますか。',answer:'恒星',hint:'',subject:'理科',point:'天体基礎',title:'星の分類'},
+  {id:'024',question:'恒星のまわりを回っている星を何といいますか。',answer:'惑星',hint:'',subject:'理科',point:'天体基礎',title:'星の分類'},
+  {id:'025',question:'惑星のまわりを回っている星を何といいますか。',answer:'衛星',hint:'',subject:'理科',point:'天体基礎',title:'星の分類'},
+  {id:'026',question:'二酸化炭素の温室効果で表面温度が480°Cにもなり、濃硫酸の厚い雲でおおわれていて、「よいの明星」や「明けの明星」ともよばれる惑星は何ですか。',answer:'金星',hint:'',subject:'理科',point:'太陽系',title:'惑星の特徴'},
+  {id:'027',question:'鉄分の酸化（赤さび）のため全体が赤く、両極付近はドライアイスで白く見えている惑星は何ですか。',answer:'火星',hint:'',subject:'理科',point:'太陽系',title:'惑星の特徴'},
+  {id:'028',question:'月の満ち欠けの周期は約何日ですか。小数第1位まで答えなさい。',answer:'29.5日',hint:'朔望月',subject:'理科',point:'月',title:'周期'},
+  {id:'029',question:'月の公転周期は約何日ですか。小数第1位まで答えなさい。',answer:'27.3日',hint:'恒星月',subject:'理科',point:'月',title:'周期'},
+  {id:'030',question:'月の出が6時で、月の入りが18時のとき、月の南中する時刻は何時ですか。',answer:'12時',hint:'出〜南中〜入りは約6時間間隔',subject:'理科',point:'月',title:'見え方と時刻'},
+  {id:'031',question:'月の南中時刻は1日に約何分ずつおくれていきますか。',answer:'約50分',hint:'',subject:'理科',point:'月',title:'見え方と時刻'},
+  {id:'032',question:'新月・三日月・上弦の月・満月・下弦の月のうち、0時ごろ東に見える月はどれですか。',answer:'下弦の月',hint:'',subject:'理科',point:'月',title:'位相と見える方角'},
+  {id:'033',question:'新月・三日月・上弦の月・満月・下弦の月のうち、6時ごろ西に見える月はどれですか。',answer:'満月',hint:'',subject:'理科',point:'月',title:'位相と見える方角'},
+  {id:'034',question:'0時・6時・12時・18時のうち、上弦の月が東に見えるのは何時ですか。',answer:'12時',hint:'',subject:'理科',point:'月',title:'位相と見える時刻'},
+  {id:'035',question:'0時・6時・12時・18時のうち、満月が南中するのは何時ですか。',answer:'0時',hint:'',subject:'理科',point:'月',title:'位相と見える時刻'},
+  {id:'036',question:'新月・三日月・上弦の月・満月・下弦の月のうち、日食が起こるときの月はどれですか。',answer:'新月',hint:'',subject:'理科',point:'食',title:'日食'},
+  {id:'037',question:'新月・三日月・上弦の月・満月・下弦の月のうち、月食が起こるときの月はどれですか。',answer:'満月',hint:'',subject:'理科',point:'食',title:'月食'},
+  {id:'038',question:'日食のとき、太陽は左（東）と右（西）のどちらから欠けますか。',answer:'西（右）',hint:'観測地により前後する場合あり',subject:'理科',point:'食',title:'欠け方'},
+  {id:'039',question:'月食のとき、月は左（東）と右（西）のどちらから欠けますか。',answer:'東（左）',hint:'',subject:'理科',point:'食',title:'欠け方'},
+  {id:'040',question:'新月・三日月・上弦の月・満月・下弦の月のうち、大潮になるのはどんな月のときですか。',answer:'新月と満月',hint:'太陽・地球・月が一直線',subject:'理科',point:'潮汐',title:'大潮'},
+  {id:'041',question:'上の方が濃い・下の方が濃い・どこも同じ濃さのうち、水溶液の濃さはどれですか。',answer:'どこも同じ濃さ',hint:'均一に混ざった液体＝溶液',subject:'理科',point:'水溶液',title:'基礎'},
+  {id:'042',question:'水・食塩・食塩水のうち、溶媒はどれですか。',answer:'水',hint:'溶かす側が溶媒',subject:'理科',point:'水溶液',title:'基礎'},
+  {id:'043',question:'水・食塩・食塩水のうち、溶質はどれですか。',answer:'食塩',hint:'溶ける側が溶質',subject:'理科',point:'水溶液',title:'基礎'},
+  {id:'044',question:'水・食塩・食塩水のうち、溶液はどれですか。',answer:'食塩水',hint:'溶媒＋溶質＝溶液',subject:'理科',point:'水溶液',title:'基礎'},
+  {id:'045',question:'限度いっぱいに溶かした溶液を何といいますか。',answer:'飽和水溶液',hint:'飽和＝これ以上溶けない',subject:'理科',point:'水溶液',title:'用語'},
+  {id:'046',question:'食塩とホウ酸のうち、温度を変化させたとき、溶解度の変化が大きい物質はどちらですか。',answer:'ホウ酸',hint:'表の温度ごとの差に注目',subject:'理科',point:'水溶液',title:'溶解度'},
+  {id:'047',question:'水酸化カルシウム・ホウ酸・みょうばんのうち、水の温度が高くなるほど溶解度が小さくなる物質はどれですか。',answer:'水酸化カルシウム',hint:'例外的に温度↑で溶けにくい',subject:'理科',point:'水溶液',title:'溶解度'},
+  {id:'048',question:'アンモニア・ホウ酸・アルコールのうち、水に無制限に溶けるものはどれですか。',answer:'アルコール',hint:'互いに溶け合う＝無制限',subject:'理科',point:'水溶液',title:'性質'},
+  {id:'049',question:'温度の高い水と温度の低い水のうち、気体が多く溶けるのはどちらですか。',answer:'温度の低い水',hint:'ソーダ水は冷たいほど気体が多い',subject:'理科',point:'水溶液',title:'気体の溶け方'},
+  {id:'050',question:'10%の食塩水と20%の食塩水のうち、同じ体積でもより重いのはどちらですか。',answer:'20%の食塩水',hint:'溶質が多いほど密度↑',subject:'理科',point:'水溶液',title:'濃度と密度'},
+  {id:'051',question:'アルコール・食塩・砂糖のうち、水に溶かしたとき、同じ体積あたりの重さが水より軽くなるのはどれですか。',answer:'アルコール',hint:'アルコールは水より密度が小さい',subject:'理科',point:'水溶液',title:'密度'},
+  {id:'052',question:'☆ア〜ウのうち、食塩とホウ酸の結晶はどのような形をしていますか。<br><small>（画像は同じフォルダに置いてください）</small><br>ア：<img src="IMG_2692.jpg"><br>イ：<img src="IMG_2693.jpg"><br>ウ：<img src="IMG_2694.jpg">',answer:'食塩：イ、ホウ酸：ア',hint:'食塩は立方体、ホウ酸は板状',subject:'理科',point:'水溶液',title:'結晶の形'},
+  {id:'053',question:'★40℃の水100gに溶かすことのできる食塩は何gですか。<br><small>（下の表画像を同じフォルダに置く）</small><br><img src="IMG_2695.jpg">',answer:'36.5g',hint:'表の40℃の「食塩」を見る',subject:'理科',point:'水溶液',title:'溶解度（食塩）'},
+  {id:'054',question:'★60℃の水200gに溶かすことのできる食塩は何gですか。<br><img src="IMG_2695.jpg">',answer:'74g',hint:'60℃の値 × 2倍',subject:'理科',point:'水溶液',title:'溶解度（食塩）'},
+  {id:'055',question:'★80℃の水100gにホウ酸を溶けるだけ溶かした水溶液の温度を20℃まで下げると、ホウ酸は何g出てきますか。<br><img src="IMG_2695.jpg">',answer:'19g',hint:'80℃(24g)→20℃(5g)。差が析出量',subject:'理科',point:'水溶液',title:'溶解度（ホウ酸）'},
+  {id:'056',question:'★100℃の水100gに食塩とホウ酸を溶けるだけ溶かし、温度を0℃まで下げたとき、より多くの溶け残りが出てくるのはどちらですか。<br><img src="IMG_2695.jpg">',answer:'ホウ酸',hint:'温度による差が大きいのはホウ酸',subject:'理科',point:'水溶液',title:'溶け残り比較'}
 ];
-
-// ====== 復習モード起動 ======
-function startReviewMode(){
-  mode='practice';
-  const stored = JSON.parse(localStorage.getItem(REVIEW_KEY)||'[]');
-  if(!stored || stored.length===0){
-    alert('復習リストが空です。練習またはテストで「まだ／ぜんぜん」を付けた問題が追加されます。');
-    return;
-  }
-  currentQuestions = shuffle(stored).slice();
-  currentIndex=0; reviewAddedNow=0;
-  document.getElementById('timer').textContent='';
-  show('quizScreen');
-  renderQuestion();
-}
 </script>
 </body>
 </html>
